@@ -4,6 +4,13 @@ There are 2 Shell Scripts that manages the video recordings and their start-up.
 
 # record.sh - Record the video and store it
 
+```
+root@carberrypi:/home/pi/carberryshare# ls -lrth
+total 52K
+drwxr-xr-x 2 root root  20K Jun 20 13:10 completed
+drwxr-xr-x 2 root root  28K Jun 21 14:00 in-progress
+```
+
 
 # welcome.sh - Present the Service Menu if user SSH into the carberrypi
 
