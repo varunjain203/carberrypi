@@ -40,6 +40,23 @@ NO LIVE Streaming....
 /bin/sh /root/record.sh
 exit 0
 ```
+# carberrystream.py
+
+- Streams live feed from dash camera to the internet via Ipv4 and Ipv6 both
+- When Live Streaming is chosen, your Pi's local and internet facing IP-address link will be displayed.
+
+```
+root@carberrypi:~# ./welcome.sh
+
+           ###### WELCOME TO CarBerry DashCam MENU ######
+
+Do you want to stream live ?
+y
+Please visit: http://192.168.29.107:8000 to see the live stream.
+Internet Stream available at :- http://[4567:201:1c:7890:a378:a1b2:f7ab:1234]:8000
+
+```
+
 # Share the recordings via SAMBA/CIFS
 
 - To be able to to access the recordings instantly you can implement a Samba server.
