@@ -1,6 +1,12 @@
 # carberrypi
 This repository is for creating your own raspberry pi based car dashcam.
 
+Current Feature List:
+- Records 720P videos with night mode within 30 seconds of car ignition ON.
+- Share / Access the recorded videos via Samba/CIFS share.
+- Optionally converts the recorded H.264 videos to Mp4 for easy sharing.
+- Stream Live from dashcam to the internet with Ipv6 support.
+
 # record.sh - Record the video and store it
 
 ```
