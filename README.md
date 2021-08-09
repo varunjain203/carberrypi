@@ -44,6 +44,7 @@ exit 0
 
 - Streams live feed from dash camera to the internet via Ipv4 and Ipv6 both
 - When Live Streaming is chosen, your Pi's local and internet facing IP-address link will be displayed.
+- I have rotated the camera at 90 Deg. because I wanted to place PI such that the USB power cable is attached from the bottom.
 
 ```
 root@carberrypi:~# ./welcome.sh
