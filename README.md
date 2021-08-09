@@ -2,10 +2,11 @@
 This repository is for creating your own raspberry pi based car dashcam.
 There are 2 Shell Scripts that manages the video recordings and their start-up.
 
-# record.sh - Record the video and store it under /home/pi/carberryshare/in-progress/
+# record.sh - Record the video and store it
 
 
 # welcome.sh - Present the Service Menu if user SSH into the carberrypi
+
 - The welcome menu is like service menu or Swiss knife to manage your recordings or change the mode of operation such as Recording (Default) OR Live Streaming.
 - When you SSH into the carberrypi, you will be presented a CarBerry DashCam MENU as follows:
 
@@ -32,11 +33,26 @@ NO LIVE Streaming....
 ```
 
 # The carberrypi needs to start video recording as soon as it boots up
+
 - Add the following lines in /etc/rc.local
 ```
 /usr/bin/vcdbg set awb_mode 0
 /bin/sh /root/record.sh
 exit 0
 ```
+# Share the recordings via SAMBA/CIFS
 
+- To be able to to access the recordings instantly you can implement a Samba server.
+- Add the following lines at the last of /etc/samba/smb.conf
+- Android - Install any Network File Manager from Android Play Store
+- Use Files app on IOs on your Iphone and configure it to add the Samba File Share
+```
+[carberryshare]
+        path = /home/pi/carberryshare
+        comment = casrshare
+        browseable = yes
+        read only = no
+        writable = yes
+        public = yes
+```
  
