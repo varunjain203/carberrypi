@@ -5,9 +5,9 @@ import http.server
 import socketserver
 import socket
 from threading import Condition
-from http import server
 
-PAGE="""\
+# HTML page template for video streaming
+PAGE = """\
 <!DOCTYPE html>
 <html>
 <head>
@@ -47,7 +47,7 @@ class StreamingOutput(object):
         self.condition = Condition()
 
     def write(self, buf):
-        if buf.startswith(b'\xff\xd8'):
+        if buf.startswith(b'\xff\xd8'):  # Check for the start of a JPEG frame
             # New frame, copy the existing buffer's content and notify all
             # clients it's available
             self.buffer.truncate()
@@ -80,7 +80,7 @@ class StreamingHandler(http.server.BaseHTTPRequestHandler):
             try:
                 while True:
                     with output.condition:
-                        output.condition.wait()
+                        output.condition.wait()  # Wait for new frame
                         frame = output.frame
                     self.wfile.write(b'--FRAME\r\n')
                     self.send_header('Content-Type', 'image/jpeg')
@@ -89,9 +89,7 @@ class StreamingHandler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(frame)
                     self.wfile.write(b'\r\n')
             except Exception as e:
-                logging.warning(
-                    'Removed streaming client %s: %s',
-                    self.client_address, str(e))
+                logging.warning('Removed streaming client %s: %s', self.client_address, str(e))
         else:
             self.send_error(404)
             self.end_headers()
@@ -99,17 +97,25 @@ class StreamingHandler(http.server.BaseHTTPRequestHandler):
 class StreamingServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
-    address_family = socket.AF_INET6
+    address_family = socket.AF_INET  # Change to IPv4 if you don't need IPv6
 
-with picamera.PiCamera(resolution='1280x720', framerate=40) as camera:
+# Set up the camera and stream video
+with picamera.PICamera(resolution='1280x720', framerate=40) as camera:
     output = StreamingOutput()
-    camera.rotation = 90
-   # camera.iso = 400
-   # camera.shutter_speed = 6000000
-    camera.start_recording(output, format='mjpeg')
+    camera.rotation = 90  # Rotate image if needed
+    # camera.iso = 400      # Enable if you need manual ISO control
+    # camera.shutter_speed = 6000000  # Enable if you need manual shutter speed
+
+    camera.start_recording(output, format='mjpeg')  # Start recording
+
     try:
-        address = ('', 8000)
-        http.server = StreamingServer(address, StreamingHandler)
-        http.server.serve_forever()
+        # Set up the HTTP server and bind it to address
+        address = ('', 8000)  # Listen on port 8000
+        httpd = StreamingServer(address, StreamingHandler)  # Rename variable to avoid conflict with the module name
+        logging.info("Starting HTTP server for streaming at http://localhost:8000")
+        httpd.serve_forever()  # Start serving the HTTP requests
+    except Exception as e:
+        logging.error("Error starting the server: %s", str(e))
     finally:
-        camera.stop_recording()
+        camera.stop_recording()  # Stop recording when finished
+        logging.info("Camera recording stopped.")
