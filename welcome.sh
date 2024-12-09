@@ -1,97 +1,108 @@
 #!/bin/bash
-# When a user logs on to Raspberry Pi manually, it should execute the Welcome DashCam Menu script in the bash profile file.
 
-# Set paths
-INPROGRESS="/home/pi/carberryshare/in-progress"
-COMPLETED="/home/pi/carberryshare/completed"
+# Define paths
+INPROGRESS=/home/pi/carberryshare/in-progress
+COMPLETED=/home/pi/carberryshare/completed
+STREAMING_PID_FILE="/tmp/streaming_pid"
 
-# Get file counts
-list_crecords=$(ls "${COMPLETED}" | wc -l)
-list_irecords=$(ls "${INPROGRESS}" | wc -l)
-number_records=$(find "${INPROGRESS}" -type f | wc -l)
-
-# Get process ID and process name for ongoing raspivid process
-processid=$(ps -ef | grep -i raspivid | grep -v grep | awk '{print $2}')
-processname=$(ps -ef | grep -i raspivid | grep -v grep | awk '{print $8}')
-
-# Display welcome message
-echo ""
-echo "           ###### WELCOME TO CarBerry DashCam MENU ######"
-echo ""
-
-# Show completed recordings
-if [[ "${list_crecords}" -gt 0 ]]; then
-    echo "Here are your completed recordings:"
-    echo "$list_crecords recordings found."
-    ls -lrth "${COMPLETED}" | tail -n +2 | awk '{print $5, $6, $7, $8, $9}'
-    echo ""
-
-    # Ask user if they want to stop any ongoing recordings
-    if [[ -z "${processid}" ]]; then
-        echo "No ongoing recording process found!"
+# Function to check if the recording process is running
+check_recording() {
+    # Check if raspivid (video recording) is running
+    if ps aux | grep -i 'raspivid' | grep -v 'grep' > /dev/null
+    then
+        return 0  # Recording is running
     else
-        echo ">> An ongoing recording is found! >> STOP IT???"
-        echo "Process name: ${processname}"
-        read -p "Do you want to stop it? (y/n): " answer1
-        if [[ "${answer1}" == "y" ]]; then
-            kill -9 "${processid}"
-            echo "Recording stopped."
-        else
-            echo "Recording continues."
-        fi
+        return 1  # No recording running
     fi
-else
-    echo "No recordings found in completed."
-fi
+}
 
-# Ask User if they want to convert in-progress recordings to MP4
-echo ""
-echo "No ongoing recordings found!"
-echo "Do you want to convert present ${number_records} recordings to MP4?"
-read -p "(y/n): " answer2
-if [[ "${answer2}" == "y" ]]; then
-    cd "${INPROGRESS}"
-    for file in *.h264; do
-        echo ">>>>>>> Converting H.264 to MP4..."
-        MP4Box -add "${file}" -fps 33 "${COMPLETED}/${file}.mp4" &
-    done
-    wait  # Wait for all background processes to finish
-    echo "Conversion complete."
-else
-    echo "Conversion skipped."
-fi
-
-# Get the local IP and IPv6 address
-ipa=$(ifconfig wlan0 | awk '/inet / {print $2}')
-ipv6addr=$(ifconfig wlan0 | awk '/inet6 / {print $2}')
-
-# Stream live option
-streamprocessid=$(ps -ef | grep carberrystream.py | grep -v grep | awk '{print $2}')
-echo "Do you want to stream live? (y/n):"
-read -p "(y/n): " answer3
-
-if [[ "${answer3}" == "y" ]]; then
-    if [[ -z "${streamprocessid}" ]]; then
-        python3 /root/carberrystream.py &
-        echo "Please visit: http://${ipa}:8000 to see the live stream."
-        echo "Internet Stream available at: http://[${ipv6addr}]:8000"
+# Function to check if the streaming process is running
+check_streaming() {
+    # Check if the stream server (stream.py) is running
+    if [ -f "$STREAMING_PID_FILE" ] && ps -p $(cat "$STREAMING_PID_FILE") > /dev/null 2>&1
+    then
+        return 0  # Streaming is running
     else
-        echo "Streaming already exists. Process ID: ${streamprocessid}"
-        echo "Do you want to stop the streaming? (y/n):"
-        read -p "(y/n): " answer4
-        if [[ "${answer4}" == "y" ]]; then
-            kill -9 "${streamprocessid}"
-            echo "Live stream stopped!"
-        else
-            echo "Live streaming continues..."
-        fi
+        return 1  # No streaming process running
     fi
-else
-    if [[ -z "${streamprocessid}" ]]; then
-        echo "No live streaming currently."
-    else
-        echo "Stopping existing stream..."
-        kill -9 "${streamprocessid}"
+}
+
+# Function to start streaming
+start_streaming() {
+    echo "Starting live stream..."
+    # Start the Python streaming script in the background and store the PID
+    python3 /root/carberrystream.py &
+    STREAM_PID=$!
+    echo $STREAM_PID > "$STREAMING_PID_FILE"  # Save the PID of the streaming process
+    echo "Stream is available at http://<your-pi-ip>:8000"
+}
+
+# Function to stop streaming
+stop_streaming() {
+    if check_streaming; then
+        STREAM_PID=$(cat "$STREAMING_PID_FILE")
+        echo "Stopping live streaming..."
+        kill -9 $STREAM_PID
+        rm "$STREAMING_PID_FILE"  # Remove the PID file
         echo "Live stream stopped!"
+    else
+        echo "No live stream is currently running."
     fi
-fi
+}
+
+# Display the main menu
+echo "Welcome to CarBerry DashCam!"
+echo "1. Start Recording"
+echo "2. Start/Stop Live Streaming"
+echo "3. View Completed Recordings"
+echo "4. Exit"
+read -p "Choose an option (1-4): " choice
+
+case $choice in
+  1)
+    # Start recording by invoking the record.sh script
+    if check_recording; then
+        echo "Recording is already in progress. Do you want to stop it? (y/n)"
+        read stop_recording
+        if [ "$stop_recording" == "y" ]; then
+            echo "Stopping the current recording..."
+            pkill -f raspivid  # Stop raspivid process
+            echo "Recording stopped!"
+        fi
+    fi
+
+    echo "Starting recording..."
+    ./record.sh  # Start a new recording
+    ;;
+  
+  2)
+    # Start/Stop live streaming
+    if check_streaming; then
+        echo "A stream is already running. Do you want to stop it? (y/n)"
+        read stop_stream
+        if [ "$stop_stream" == "y" ]; then
+            stop_streaming
+        else
+            echo "Continuing the current live stream."
+        fi
+    else
+        start_streaming
+    fi
+    ;;
+  
+  3)
+    # Show completed recordings
+    echo "Here are your completed recordings:"
+    ls -lrth $COMPLETED
+    ;;
+  
+  4)
+    # Exit the script
+    echo "Exiting... Goodbye!"
+    exit 0
+    ;;
+  
+  *)
+    echo "Invalid choice, please try again."
+    ;;
+esac
