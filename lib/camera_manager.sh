@@ -24,10 +24,10 @@ build_libcamera_vid_command() {
 
 # Test camera availability
 test_camera() {
-    log_info "Testing camera availability"
+    info "Testing camera availability"
     
     if ! acquire_camera_lock "test" 5; then
-        log_error "Cannot acquire camera lock for testing"
+        error "Cannot acquire camera lock for testing"
         return 1
     fi
     
@@ -39,12 +39,12 @@ test_camera() {
     log_debug "Running camera test: $cmd"
     
     if timeout 10 $cmd >/dev/null 2>&1; then
-        log_info "Camera test successful"
+        info "Camera test successful"
         rm -f "$test_file"
         release_camera_lock
         return 0
     else
-        log_error "Camera test failed"
+        error "Camera test failed"
         rm -f "$test_file"
         release_camera_lock
         return 1
@@ -58,35 +58,35 @@ check_libcamera_tools() {
     
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
-            log_error "Required tool not found: $tool"
+            error "Required tool not found: $tool"
             ((missing++))
         fi
     done
     
     if [[ $missing -gt 0 ]]; then
-        log_error "Missing $missing required libcamera tools"
-        log_error "Please install libcamera tools: sudo apt install libcamera-apps"
+        error "Missing $missing required libcamera tools"
+        error "Please install libcamera tools: sudo apt install libcamera-apps"
         return 1
     fi
     
-    log_info "All required libcamera tools are available"
+    info "All required libcamera tools are available"
     return 0
 }
 
 # Get camera information
 get_camera_info() {
-    log_info "Getting camera information"
+    info "Getting camera information"
     
     if ! acquire_camera_lock "info" 5; then
-        log_error "Cannot acquire camera lock for info"
+        error "Cannot acquire camera lock for info"
         return 1
     fi
     
     # Use libcamera-hello to get camera info
     if command -v libcamera-hello >/dev/null 2>&1; then
-        log_info "Camera information:"
+        info "Camera information:"
         timeout 5 libcamera-hello --list-cameras 2>/dev/null | while IFS= read -r line; do
-            log_info "  $line"
+            info "  $line"
         done
     fi
     
@@ -101,11 +101,11 @@ monitor_camera_process() {
     local max_runtime="${3:-0}"  # 0 means no limit
     
     if [[ -z "$pid" ]]; then
-        log_error "No PID provided for monitoring"
+        error "No PID provided for monitoring"
         return 1
     fi
     
-    log_info "Monitoring camera process $pid ($mode)"
+    info "Monitoring camera process $pid ($mode)"
     
     local start_time
     start_time=$(date +%s)
@@ -120,7 +120,7 @@ monitor_camera_process() {
             local runtime=$((current_time - start_time))
             
             if [[ $runtime -ge $max_runtime ]]; then
-                log_info "Camera process $pid reached runtime limit (${runtime}s)"
+                info "Camera process $pid reached runtime limit (${runtime}s)"
                 terminate_process "$pid"
                 break
             fi
@@ -137,13 +137,13 @@ monitor_camera_process() {
     end_time=$(date +%s)
     local total_runtime=$((end_time - start_time))
     
-    log_info "Camera process $pid finished after ${total_runtime}s"
+    info "Camera process $pid finished after ${total_runtime}s"
     return 0
 }
 
 # Kill any existing camera processes
 kill_camera_processes() {
-    log_info "Checking for existing camera processes"
+    info "Checking for existing camera processes"
     
     local processes=("libcamera-vid" "libcamera-hello")
     local killed=0
@@ -164,7 +164,7 @@ kill_camera_processes() {
     done
     
     if [[ $killed -gt 0 ]]; then
-        log_info "Terminated $killed camera processes"
+        info "Terminated $killed camera processes"
         sleep 2  # Give time for cleanup
     fi
     
@@ -173,7 +173,7 @@ kill_camera_processes() {
 
 # Initialize camera system
 init_camera_system() {
-    log_info "Initializing camera system"
+    info "Initializing camera system"
     
     # Check for required tools
     if ! check_libcamera_tools; then
@@ -185,11 +185,11 @@ init_camera_system() {
     
     # Test camera
     if ! test_camera; then
-        log_error "Camera initialization failed"
+        error "Camera initialization failed"
         return 1
     fi
     
-    log_info "Camera system initialized successfully"
+    info "Camera system initialized successfully"
     return 0
 }
 

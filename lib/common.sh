@@ -26,7 +26,9 @@ if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
     # Make paths flexible for any user
     # Expand tilde in BASE_DIR if present
     if [[ "$BASE_DIR" =~ ^~/ ]]; then
-        BASE_DIR="${HOME}/${BASE_DIR#~/}"
+        BASE_DIR="${HOME}/${BASE_DIR#\~/}"
+    elif [[ "$BASE_DIR" == "~" ]]; then
+        BASE_DIR="$HOME"
     elif [[ "$BASE_DIR" =~ ^\$HOME ]]; then
         BASE_DIR="${BASE_DIR/\$HOME/$HOME}"
     fi
