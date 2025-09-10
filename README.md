@@ -65,7 +65,11 @@ The system automatically adapts to your user account:
 sudo apt update && sudo apt upgrade -y
 
 # Install required packages
-sudo apt install -y libcamera-apps python3-picamera2
+# For newer Raspberry Pi OS (Bookworm and later)
+sudo apt install -y rpicam-apps python3-picamera2
+
+# For older Raspberry Pi OS versions
+# sudo apt install -y libcamera-apps python3-picamera2
 
 # Optional: Install Samba for network file sharing
 sudo apt install -y samba

@@ -11,7 +11,18 @@ build_libcamera_vid_command() {
     local output_file="$1"
     local timeout="${2:-$RECORDING_TIMEOUT}"
     
-    echo "libcamera-vid" \
+    # Detect which camera tool is available
+    local camera_cmd=""
+    if command -v "rpicam-vid" >/dev/null 2>&1; then
+        camera_cmd="rpicam-vid"
+    elif command -v "libcamera-vid" >/dev/null 2>&1; then
+        camera_cmd="libcamera-vid"
+    else
+        error "No camera recording tool found (rpicam-vid or libcamera-vid)"
+        return 1
+    fi
+    
+    echo "$camera_cmd" \
          "--timeout" "$timeout" \
          "--width" "$CAMERA_WIDTH" \
          "--height" "$CAMERA_HEIGHT" \
@@ -53,15 +64,41 @@ test_camera() {
 
 # Check if libcamera tools are available
 check_libcamera_tools() {
-    local tools=("libcamera-vid" "libcamera-hello")
+    # Check for both old and new camera tool names
+    local old_tools=("libcamera-vid" "libcamera-hello")
+    local new_tools=("rpicam-vid" "rpicam-hello")
     local missing=0
+    local found_tools=()
     
-    for tool in "${tools[@]}"; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
-            error "Required tool not found: $tool"
-            ((missing++))
+    # Try new tools first (rpicam-*)
+    for tool in "${new_tools[@]}"; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            found_tools+=("$tool")
         fi
     done
+    
+    # If new tools not found, try old tools (libcamera-*)
+    if [[ ${#found_tools[@]} -eq 0 ]]; then
+        for tool in "${old_tools[@]}"; do
+            if command -v "$tool" >/dev/null 2>&1; then
+                found_tools+=("$tool")
+            fi
+        done
+    fi
+    
+    # Check if we found the required tools
+    if [[ ${#found_tools[@]} -lt 2 ]]; then
+        error "Camera tools not found. Tried:"
+        for tool in "${new_tools[@]}" "${old_tools[@]}"; do
+            error "  - $tool"
+        done
+        error "Please install camera tools:"
+        error "  sudo apt install rpicam-apps  # For newer Raspberry Pi OS"
+        error "  sudo apt install libcamera-apps  # For older versions"
+        return 1
+    fi
+    
+    info "Found camera tools: ${found_tools[*]}"
     
     if [[ $missing -gt 0 ]]; then
         error "Missing $missing required libcamera tools"
@@ -82,10 +119,17 @@ get_camera_info() {
         return 1
     fi
     
-    # Use libcamera-hello to get camera info
-    if command -v libcamera-hello >/dev/null 2>&1; then
+    # Use camera info tool to get camera info
+    local camera_info_cmd=""
+    if command -v "rpicam-hello" >/dev/null 2>&1; then
+        camera_info_cmd="rpicam-hello"
+    elif command -v "libcamera-hello" >/dev/null 2>&1; then
+        camera_info_cmd="libcamera-hello"
+    fi
+    
+    if [[ -n "$camera_info_cmd" ]]; then
         info "Camera information:"
-        timeout 5 libcamera-hello --list-cameras 2>/dev/null | while IFS= read -r line; do
+        timeout 5 "$camera_info_cmd" --list-cameras 2>/dev/null | while IFS= read -r line; do
             info "  $line"
         done
     fi
@@ -145,7 +189,7 @@ monitor_camera_process() {
 kill_camera_processes() {
     info "Checking for existing camera processes"
     
-    local processes=("libcamera-vid" "libcamera-hello")
+    local processes=("rpicam-vid" "rpicam-hello" "libcamera-vid" "libcamera-hello")
     local killed=0
     
     for process in "${processes[@]}"; do
