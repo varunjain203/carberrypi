@@ -3,25 +3,33 @@
 # Modern CarBerry DashCam Menu System
 # Uses libcamera-vid and proper resource management
 
-# Get script directory and change to it
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# Get script directory BEFORE sourcing anything
+WELCOME_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$WELCOME_SCRIPT_DIR"
 
 # Source common functions
-source "$SCRIPT_DIR/lib/common.sh"
+source "./lib/common.sh"
 
-# Service scripts (use absolute paths to avoid confusion)
-RECORD_SCRIPT="$SCRIPT_DIR/bin/record.sh"
-STREAM_SCRIPT="$SCRIPT_DIR/bin/stream.sh"
+# Service scripts (use paths relative to welcome.sh location)
+RECORD_SCRIPT="$WELCOME_SCRIPT_DIR/bin/record.sh"
+STREAM_SCRIPT="$WELCOME_SCRIPT_DIR/bin/stream.sh"
 
 # Debug: verify paths exist
 if [[ ! -f "$RECORD_SCRIPT" ]]; then
     echo "Error: Record script not found at $RECORD_SCRIPT" >&2
+    echo "Welcome script directory: $WELCOME_SCRIPT_DIR" >&2
+    echo "Current directory: $(pwd)" >&2
+    echo "Directory contents:" >&2
+    ls -la "$WELCOME_SCRIPT_DIR/" >&2
     exit 1
 fi
 
 if [[ ! -f "$STREAM_SCRIPT" ]]; then
     echo "Error: Stream script not found at $STREAM_SCRIPT" >&2
+    echo "Welcome script directory: $WELCOME_SCRIPT_DIR" >&2
+    echo "Current directory: $(pwd)" >&2
+    echo "Directory contents:" >&2
+    ls -la "$WELCOME_SCRIPT_DIR/" >&2
     exit 1
 fi
 
