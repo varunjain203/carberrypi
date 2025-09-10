@@ -36,11 +36,16 @@ chmod +x test_modern_system.sh
 
 ```bash
 # Make sure you're in the project directory
-cd ~/carberrypi
+cd ~/carberrypi  # or wherever you cloned the repo
 
-# Start the interactive menu
+# Start the interactive menu (works for any user)
 ./welcome.sh
 ```
+
+The system automatically adapts to your user account:
+- **Files stored in**: `~/carberryshare/` (your home directory)
+- **Temp files**: `/tmp/dashcam_yourusername.*`
+- **Permissions**: Uses your user account permissions
 
 ## 📋 System Requirements
 
@@ -48,6 +53,7 @@ cd ~/carberrypi
 - **Camera**: Raspberry Pi Camera Module (v1, v2, or HQ)
 - **OS**: Raspberry Pi OS (Bullseye or newer)
 - **Storage**: MicroSD card (32GB+ recommended)
+- **User**: Works with any user account (pi, ubuntu, custom users, etc.)
 - **Dependencies**: 
   - `libcamera-apps` (for recording)
   - `python3-picamera2` (for streaming)
@@ -128,9 +134,23 @@ RECORDING_MAX_SEGMENTS=180      # 6 hours total
 # Streaming Settings
 STREAMING_PORT=8000
 
-# File Paths
-BASE_DIR="/home/pi/carberryshare"
+# File Paths (automatically adapts to current user)
+BASE_DIR="~/carberryshare"      # Expands to /home/yourusername/carberryshare
 ```
+
+## 👥 Multi-User Support
+
+The system automatically adapts to any user:
+
+- **User `pi`**: Files in `/home/pi/carberryshare/`
+- **User `ubuntu`**: Files in `/home/ubuntu/carberryshare/`
+- **User `varun`**: Files in `/home/varun/carberryshare/`
+- **Any user**: Files in `$HOME/carberryshare/`
+
+Each user gets their own:
+- Recording directory
+- PID/lock files (`/tmp/dashcam_username.*`)
+- Independent operation
 
 ## 🔄 Auto-Start on Boot
 

@@ -23,9 +23,21 @@ done
 if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
     
+    # Make paths flexible for any user
     # Expand tilde in BASE_DIR if present
     if [[ "$BASE_DIR" =~ ^~/ ]]; then
         BASE_DIR="${HOME}/${BASE_DIR#~/}"
+    elif [[ "$BASE_DIR" =~ ^\$HOME ]]; then
+        BASE_DIR="${BASE_DIR/\$HOME/$HOME}"
+    fi
+    
+    # Expand USER variable in PID and LOCK files
+    PID_FILE="${PID_FILE//\$USER/$USER}"
+    LOCK_FILE="${LOCK_FILE//\$USER/$USER}"
+    
+    # Ensure BASE_DIR is absolute path
+    if [[ ! "$BASE_DIR" =~ ^/ ]]; then
+        BASE_DIR="$HOME/$BASE_DIR"
     fi
 else
     echo "Error: Configuration file not found in any of these locations:" >&2
@@ -278,10 +290,22 @@ validate_config() {
         ((errors++))
     fi
     
-    # Check paths
-    if [[ ! -d "$(dirname "$BASE_DIR")" ]]; then
-        error "Base directory parent does not exist: $(dirname "$BASE_DIR")"
-        ((errors++))
+    # Check paths - create parent directory if it doesn't exist
+    local base_parent
+    base_parent="$(dirname "$BASE_DIR")"
+    if [[ ! -d "$base_parent" ]]; then
+        # Try to create parent directory if it's under user's home
+        if [[ "$base_parent" == "$HOME"* ]] || [[ "$base_parent" == "/home/$USER"* ]]; then
+            if mkdir -p "$base_parent" 2>/dev/null; then
+                info "Created parent directory: $base_parent"
+            else
+                error "Cannot create base directory parent: $base_parent"
+                ((errors++))
+            fi
+        else
+            error "Base directory parent does not exist and cannot be created: $base_parent"
+            ((errors++))
+        fi
     fi
     
     # Check streaming port
@@ -293,8 +317,21 @@ validate_config() {
     return $errors
 }
 
+# Show user-specific configuration
+show_user_config() {
+    info "User-specific configuration:"
+    info "  User: $USER"
+    info "  Home: $HOME"
+    info "  Base directory: $BASE_DIR"
+    info "  PID file: $PID_FILE"
+    info "  Lock file: $LOCK_FILE"
+}
+
 # Initialize system
 init_system() {
+    # Show user-specific config for debugging
+    show_user_config
+    
     # Validate configuration
     if ! validate_config; then
         error "Configuration validation failed"
