@@ -160,10 +160,11 @@ def main():
         # Create output stream
         output = StreamingOutput()
         
-        # Start MJPEG encoder
+        # Start MJPEG encoder with proper output
         from picamera2.encoders import MJPEGEncoder
+        from picamera2.outputs import FileOutput
         encoder = MJPEGEncoder()
-        picam2.start_recording(encoder, output)
+        picam2.start_recording(encoder, FileOutput(output))
         
         # Start HTTP server
         address = ('', STREAMING_PORT)
