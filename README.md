@@ -29,7 +29,7 @@ chmod +x bin/*.sh
 chmod +x test_modern_system.sh
 
 # Test the system
-./test_modern_system.sh
+./test_system.sh
 ```
 
 ### 2. First Run
@@ -95,16 +95,16 @@ You can also control the system directly via command line:
 
 ```bash
 # Recording commands
-./bin/record_modern.sh start    # Start recording session
-./bin/record_modern.sh stop     # Stop recording
-./bin/record_modern.sh status   # Check recording status
-./bin/record_modern.sh test     # Test recording system
+./bin/record.sh start    # Start recording session
+./bin/record.sh stop     # Stop recording
+./bin/record.sh status   # Check recording status
+./bin/record.sh test     # Test recording system
 
 # Streaming commands
-./bin/stream_modern.sh start    # Start streaming
-./bin/stream_modern.sh stop     # Stop streaming
-./bin/stream_modern.sh info     # Show streaming info
-./bin/stream_modern.sh test     # Test streaming system
+./bin/stream.sh start    # Start streaming
+./bin/stream.sh stop     # Stop streaming
+./bin/stream.sh info     # Show streaming info
+./bin/stream.sh test     # Test streaming system
 ```
 
 ## ⚙️ Configuration
@@ -140,7 +140,7 @@ Add to `/etc/rc.local` before `exit 0`:
 ```bash
 # Start dashcam recording on boot
 cd /home/pi/carberrypi
-./bin/record_modern.sh start &
+./bin/record.sh start &
 ```
 
 ### Method 2: Using systemd (Recommended)
@@ -162,7 +162,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/carberrypi
-ExecStart=/home/pi/carberrypi/bin/record_modern.sh start
+ExecStart=/home/pi/carberrypi/bin/record.sh start
 Restart=always
 RestartSec=10
 
@@ -188,7 +188,7 @@ The system provides MJPEG streaming accessible from any web browser:
 # Select option 2
 
 # Or directly via command line
-./bin/stream_modern.sh start
+./bin/stream.sh start
 ```
 
 ### Accessing the Stream
@@ -294,7 +294,7 @@ sudo systemctl enable smbd
 libcamera-hello --list-cameras
 
 # Test camera
-./bin/record_modern.sh test
+./bin/record.sh test
 ```
 
 **Permission errors:**
@@ -319,18 +319,18 @@ sudo pkill -f "port 8000"
 df -h /home/pi/carberryshare
 
 # Manual cleanup
-./bin/record_modern.sh stats
+./bin/record.sh stats
 ```
 
 ### System Status Check
 
 ```bash
 # Run comprehensive test
-./test_modern_system.sh
+./test_system.sh
 
 # Check individual components
-./bin/record_modern.sh test
-./bin/stream_modern.sh test
+./bin/record.sh test
+./bin/stream.sh test
 ```
 
 ## 🆕 What's New in Modern Version
@@ -358,7 +358,7 @@ The new system is backward compatible with your existing directory structure:
 
 ### Getting Help
 
-1. **Run system test**: `./test_modern_system.sh`
+1. **Run system test**: `./test_system.sh`
 2. **Check system status**: Use menu option 4 in `./welcome.sh`
 3. **View configuration**: `cat config/dashcam.conf`
 4. **Test components individually**: Use `test` commands
@@ -369,7 +369,7 @@ Contributions are welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch
-3. Test your changes with `./test_modern_system.sh`
+3. Test your changes with `./test_system.sh`
 4. Submit a pull request
 
 ## 📄 License

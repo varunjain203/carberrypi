@@ -7,9 +7,9 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
-# Modern service scripts
-RECORD_SCRIPT="$SCRIPT_DIR/bin/record_modern.sh"
-STREAM_SCRIPT="$SCRIPT_DIR/bin/stream_modern.sh"
+# Service scripts
+RECORD_SCRIPT="$SCRIPT_DIR/bin/record.sh"
+STREAM_SCRIPT="$SCRIPT_DIR/bin/stream.sh"
 
 # Initialize system
 init_system

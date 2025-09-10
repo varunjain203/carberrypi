@@ -59,11 +59,11 @@ fi
 
 echo ""
 echo "5. Testing recording script..."
-if [[ -x "bin/record_modern.sh" ]]; then
+if [[ -x "bin/record.sh" ]]; then
     echo "   ✅ Recording script exists and is executable"
     
     # Test help command
-    if bin/record_modern.sh help >/dev/null 2>&1; then
+    if bin/record.sh help >/dev/null 2>&1; then
         echo "   ✅ Recording script help works"
     else
         echo "   ❌ Recording script help failed"
@@ -75,11 +75,11 @@ fi
 
 echo ""
 echo "6. Testing streaming script..."
-if [[ -x "bin/stream_modern.sh" ]]; then
+if [[ -x "bin/stream.sh" ]]; then
     echo "   ✅ Streaming script exists and is executable"
     
     # Test help command
-    if bin/stream_modern.sh help >/dev/null 2>&1; then
+    if bin/stream.sh help >/dev/null 2>&1; then
         echo "   ✅ Streaming script help works"
     else
         echo "   ❌ Streaming script help failed"
