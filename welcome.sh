@@ -3,8 +3,11 @@
 # Modern CarBerry DashCam Menu System
 # Uses libcamera-vid and proper resource management
 
-# Get script directory and source modern system
+# Get script directory and change to it
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Source common functions
 source "$SCRIPT_DIR/lib/common.sh"
 
 # Service scripts

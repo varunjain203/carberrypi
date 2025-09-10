@@ -1,12 +1,36 @@
 #!/bin/bash
 # Common functions and utilities for the dashcam system
 
-# Source configuration
-CONFIG_FILE="${CONFIG_FILE:-$(dirname "$0")/../config/dashcam.conf}"
-if [[ -f "$CONFIG_FILE" ]]; then
+# Source configuration - try multiple locations
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Try different config file locations
+CONFIG_LOCATIONS=(
+    "${CONFIG_FILE:-}"                           # Environment variable if set
+    "$SCRIPT_DIR/../config/dashcam.conf"         # Relative to lib directory
+    "$(pwd)/config/dashcam.conf"                 # Relative to current directory
+    "/home/pi/carberrypi/config/dashcam.conf"    # Absolute path
+)
+
+CONFIG_FILE=""
+for location in "${CONFIG_LOCATIONS[@]}"; do
+    if [[ -n "$location" ]] && [[ -f "$location" ]]; then
+        CONFIG_FILE="$location"
+        break
+    fi
+done
+
+if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
 else
-    echo "Error: Configuration file not found: $CONFIG_FILE" >&2
+    echo "Error: Configuration file not found in any of these locations:" >&2
+    for location in "${CONFIG_LOCATIONS[@]}"; do
+        if [[ -n "$location" ]]; then
+            echo "  - $location" >&2
+        fi
+    done
+    echo "Current working directory: $(pwd)" >&2
+    echo "Script directory: $SCRIPT_DIR" >&2
     exit 1
 fi
 

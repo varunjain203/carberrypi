@@ -35,6 +35,9 @@ chmod +x test_modern_system.sh
 ### 2. First Run
 
 ```bash
+# Make sure you're in the project directory
+cd ~/carberrypi
+
 # Start the interactive menu
 ./welcome.sh
 ```
