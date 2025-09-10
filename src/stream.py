@@ -61,7 +61,7 @@ img {{
 </html>
 """
 
-class StreamingOutput:
+class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
         self.frame = None
         self.buffer = io.BytesIO()
@@ -76,6 +76,12 @@ class StreamingOutput:
                 self.condition.notify_all()
             self.buffer.seek(0)
         return self.buffer.write(buf)
+    
+    def writable(self):
+        return True
+    
+    def readable(self):
+        return False
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -160,11 +166,10 @@ def main():
         # Create output stream
         output = StreamingOutput()
         
-        # Start MJPEG encoder with proper output
+        # Start MJPEG encoder - use simpler approach
         from picamera2.encoders import MJPEGEncoder
-        from picamera2.outputs import FileOutput
         encoder = MJPEGEncoder()
-        picam2.start_recording(encoder, FileOutput(output))
+        picam2.start_recording(encoder, output)
         
         # Start HTTP server
         address = ('', STREAMING_PORT)
