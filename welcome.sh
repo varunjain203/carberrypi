@@ -1,108 +1,255 @@
 #!/bin/bash
 
-# Define paths
-INPROGRESS=/home/pi/carberryshare/in-progress
-COMPLETED=/home/pi/carberryshare/completed
-STREAMING_PID_FILE="/tmp/streaming_pid"
+# Modern CarBerry DashCam Menu System
+# Uses libcamera-vid and proper resource management
 
-# Function to check if the recording process is running
+# Get script directory and source modern system
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Modern service scripts
+RECORD_SCRIPT="$SCRIPT_DIR/bin/record_modern.sh"
+STREAM_SCRIPT="$SCRIPT_DIR/bin/stream_modern.sh"
+
+# Initialize system
+init_system
+
+# Function to check if recording is active
 check_recording() {
-    # Check if raspivid (video recording) is running
-    if ps aux | grep -i 'raspivid' | grep -v 'grep' > /dev/null
-    then
-        return 0  # Recording is running
-    else
-        return 1  # No recording running
-    fi
+    local status
+    status=$("$RECORD_SCRIPT" status 2>/dev/null)
+    [[ "$status" =~ ^ACTIVE: ]]
 }
 
-# Function to check if the streaming process is running
+# Function to check if streaming is active
 check_streaming() {
-    # Check if the stream server (stream.py) is running
-    if [ -f "$STREAMING_PID_FILE" ] && ps -p $(cat "$STREAMING_PID_FILE") > /dev/null 2>&1
-    then
-        return 0  # Streaming is running
-    else
-        return 1  # No streaming process running
-    fi
+    local status
+    status=$("$STREAM_SCRIPT" status 2>/dev/null)
+    [[ "$status" =~ ^ACTIVE: ]]
 }
 
 # Function to start streaming
 start_streaming() {
-    echo "Starting live stream..."
-    # Start the Python streaming script in the background and store the PID
-    python3 /root/carberrystream.py &
-    STREAM_PID=$!
-    echo $STREAM_PID > "$STREAMING_PID_FILE"  # Save the PID of the streaming process
-    echo "Stream is available at http://<your-pi-ip>:8000"
+    echo "Starting modern live stream..."
+    if "$STREAM_SCRIPT" start; then
+        echo ""
+        echo "✅ Live stream started successfully!"
+        
+        # Get stream URLs
+        echo "📺 Stream available at:"
+        echo "   http://localhost:$STREAMING_PORT"
+        
+        # Show network IPs if available
+        local ips
+        ips=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -v '^$' | head -3)
+        if [[ -n "$ips" ]]; then
+            echo "   Network access:"
+            while IFS= read -r ip; do
+                echo "     http://$ip:$STREAMING_PORT"
+            done <<< "$ips"
+        fi
+    else
+        echo "❌ Failed to start streaming"
+        echo "💡 Make sure recording is stopped first"
+    fi
 }
 
 # Function to stop streaming
 stop_streaming() {
-    if check_streaming; then
-        STREAM_PID=$(cat "$STREAMING_PID_FILE")
-        echo "Stopping live streaming..."
-        kill -9 $STREAM_PID
-        rm "$STREAMING_PID_FILE"  # Remove the PID file
-        echo "Live stream stopped!"
+    echo "Stopping live streaming..."
+    if "$STREAM_SCRIPT" stop; then
+        echo "✅ Live stream stopped!"
     else
-        echo "No live stream is currently running."
+        echo "❌ Failed to stop streaming"
     fi
 }
 
-# Display the main menu
-echo "Welcome to CarBerry DashCam!"
-echo "1. Start Recording"
-echo "2. Start/Stop Live Streaming"
-echo "3. View Completed Recordings"
-echo "4. Exit"
-read -p "Choose an option (1-4): " choice
-
-case $choice in
-  1)
-    # Start recording by invoking the record.sh script
+# Show system status
+show_system_status() {
+    echo ""
+    echo "📊 System Status:"
+    
+    # Camera status
+    local camera_status
+    camera_status=$(get_camera_status)
+    echo "   Camera: $camera_status"
+    
+    # Recording status
     if check_recording; then
-        echo "Recording is already in progress. Do you want to stop it? (y/n)"
-        read stop_recording
-        if [ "$stop_recording" == "y" ]; then
-            echo "Stopping the current recording..."
-            pkill -f raspivid  # Stop raspivid process
-            echo "Recording stopped!"
-        fi
-    fi
-
-    echo "Starting recording..."
-    ./record.sh  # Start a new recording
-    ;;
-  
-  2)
-    # Start/Stop live streaming
-    if check_streaming; then
-        echo "A stream is already running. Do you want to stop it? (y/n)"
-        read stop_stream
-        if [ "$stop_stream" == "y" ]; then
-            stop_streaming
-        else
-            echo "Continuing the current live stream."
-        fi
+        local rec_status
+        rec_status=$("$RECORD_SCRIPT" status 2>/dev/null)
+        echo "   Recording: ✅ ACTIVE ($rec_status)"
     else
-        start_streaming
+        echo "   Recording: ⭕ INACTIVE"
     fi
-    ;;
-  
-  3)
-    # Show completed recordings
-    echo "Here are your completed recordings:"
-    ls -lrth $COMPLETED
-    ;;
-  
-  4)
-    # Exit the script
-    echo "Exiting... Goodbye!"
-    exit 0
-    ;;
-  
-  *)
-    echo "Invalid choice, please try again."
-    ;;
-esac
+    
+    # Streaming status
+    if check_streaming; then
+        local stream_status
+        stream_status=$("$STREAM_SCRIPT" status 2>/dev/null)
+        echo "   Streaming: ✅ ACTIVE ($stream_status)"
+    else
+        echo "   Streaming: ⭕ INACTIVE"
+    fi
+    
+    # Storage info
+    local disk_usage recording_count
+    disk_usage=$(get_disk_usage)
+    recording_count=$(get_recording_count)
+    echo "   Storage: ${disk_usage}% used, $recording_count recordings"
+    echo ""
+}
+
+# Main menu loop
+while true; do
+    clear
+    echo "🚗 Welcome to Modern CarBerry DashCam! 📹"
+    echo "=========================================="
+    
+    show_system_status
+    
+    echo "Menu Options:"
+    echo "1. 🎬 Start/Stop Recording"
+    echo "2. 📺 Start/Stop Live Streaming"
+    echo "3. 📁 View Completed Recordings"
+    echo "4. ⚙️  System Information"
+    echo "5. 🧪 Test System"
+    echo "6. 🚪 Exit"
+    echo ""
+    read -p "Choose an option (1-6): " choice
+
+    case $choice in
+        1)
+            echo ""
+            if check_recording; then
+                echo "🎬 Recording is currently ACTIVE"
+                echo "Do you want to stop it? (y/n): "
+                read -r stop_recording
+                if [[ "$stop_recording" == "y" ]]; then
+                    echo "Stopping recording..."
+                    if "$RECORD_SCRIPT" stop; then
+                        echo "✅ Recording stopped!"
+                    else
+                        echo "❌ Failed to stop recording"
+                    fi
+                fi
+            else
+                echo "🎬 Starting recording session..."
+                echo "This will record $RECORDING_MAX_SEGMENTS segments of $((RECORDING_TIMEOUT/1000)) seconds each"
+                echo "Press Ctrl+C to stop early"
+                echo ""
+                "$RECORD_SCRIPT" start
+            fi
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+        
+        2)
+            echo ""
+            if check_streaming; then
+                echo "📺 Streaming is currently ACTIVE"
+                echo "Do you want to stop it? (y/n): "
+                read -r stop_stream
+                if [[ "$stop_stream" == "y" ]]; then
+                    stop_streaming
+                fi
+            else
+                start_streaming
+            fi
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+        
+        3)
+            echo ""
+            echo "📁 Completed Recordings:"
+            echo "======================="
+            if [[ -d "$BASE_DIR/$COMPLETED_DIR" ]]; then
+                local file_count
+                file_count=$(find "$BASE_DIR/$COMPLETED_DIR" -name "*.h264" | wc -l)
+                
+                if [[ $file_count -gt 0 ]]; then
+                    echo "Found $file_count recordings:"
+                    echo ""
+                    ls -lrth "$BASE_DIR/$COMPLETED_DIR"/*.h264 2>/dev/null | tail -20
+                    
+                    if [[ $file_count -gt 20 ]]; then
+                        echo ""
+                        echo "... (showing last 20 files, $file_count total)"
+                    fi
+                else
+                    echo "No recordings found."
+                fi
+            else
+                echo "Recordings directory not found."
+            fi
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+        
+        4)
+            echo ""
+            echo "⚙️  System Information:"
+            echo "======================"
+            echo "Config file: $CONFIG_FILE"
+            echo "Camera: ${CAMERA_WIDTH}x${CAMERA_HEIGHT} @ ${CAMERA_FRAMERATE}fps"
+            echo "Rotation: ${CAMERA_ROTATION}°"
+            echo "Recording: ${RECORDING_MAX_SEGMENTS} segments x $((RECORDING_TIMEOUT/1000))s"
+            echo "Streaming port: $STREAMING_PORT"
+            echo "Base directory: $BASE_DIR"
+            echo ""
+            get_system_status
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+        
+        5)
+            echo ""
+            echo "🧪 Testing System Components:"
+            echo "============================"
+            
+            echo "Testing recording system..."
+            if "$RECORD_SCRIPT" test; then
+                echo "✅ Recording system test passed"
+            else
+                echo "❌ Recording system test failed"
+            fi
+            
+            echo ""
+            echo "Testing streaming system..."
+            if "$STREAM_SCRIPT" test; then
+                echo "✅ Streaming system test passed"
+            else
+                echo "❌ Streaming system test failed"
+            fi
+            
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+        
+        6)
+            echo ""
+            echo "🚪 Exiting CarBerry DashCam..."
+            
+            # Clean shutdown
+            if check_recording; then
+                echo "Stopping active recording..."
+                "$RECORD_SCRIPT" stop
+            fi
+            
+            if check_streaming; then
+                echo "Stopping active streaming..."
+                "$STREAM_SCRIPT" stop
+            fi
+            
+            echo "Goodbye! 👋"
+            exit 0
+            ;;
+        
+        *)
+            echo ""
+            echo "❌ Invalid choice. Please select 1-6."
+            sleep 2
+            ;;
+    esac
+done

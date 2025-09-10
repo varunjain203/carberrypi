@@ -1,0 +1,134 @@
+# Dashcam System - Git Ignore File
+
+# Video files
+*.h264
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Log files
+*.log
+logs/
+*.log.*
+
+# Runtime files
+*.pid
+*.lock
+/var/run/dashcam.*
+/tmp/dashcam_*
+/tmp/streaming_pid
+
+# Configuration overrides (keep default config, ignore local overrides)
+config/local.conf
+config/*.local
+config/production.conf
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.orig
+*.tmp
+
+# Test output
+test_output/
+test_videos/
+test_*.h264
+
+# System files
+.directory
+desktop.ini
+
+# Sensitive data
+secrets/
+private/
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Network configuration (may contain sensitive info)
+network.conf
+wifi.conf
+
+# User-specific settings
+user_settings.conf
+personal.conf
+
+# Temporary directories
+temp/
+tmp/
+cache/
+
+# Core dumps
+core
+core.*
+
+# OS generated files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Raspberry Pi specific
+/boot/config.txt.backup
+/etc/wpa_supplicant/wpa_supplicant.conf.backup
+
+# Samba shares (may contain sensitive paths)
+smb.conf.local
+
+# SSH keys and certificates
+*.ssh/
+ssh_keys/
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Compressed files (may contain sensitive data)
+*.zip
+*.tar.gz
+*.tar.bz2
+*.7z
+*.rar
+
+# Documentation builds
+docs/_build/
+site/
