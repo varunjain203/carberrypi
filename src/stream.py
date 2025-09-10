@@ -82,6 +82,15 @@ class StreamingOutput(io.BufferedIOBase):
     
     def readable(self):
         return False
+    
+    def seekable(self):
+        return False
+    
+    def close(self):
+        pass
+    
+    def flush(self):
+        pass
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -156,7 +165,7 @@ def main():
         
         # Configure camera for streaming
         config = picam2.create_video_configuration(
-            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT), "format": "RGB888"}
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)}
         )
         picam2.configure(config)
         
@@ -166,9 +175,11 @@ def main():
         # Create output stream
         output = StreamingOutput()
         
-        # Start MJPEG encoder - use simpler approach
+        # Use the streaming approach with MJPEG
         from picamera2.encoders import MJPEGEncoder
         encoder = MJPEGEncoder()
+        
+        # Start recording with the encoder and our custom output
         picam2.start_recording(encoder, output)
         
         # Start HTTP server
