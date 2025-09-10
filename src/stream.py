@@ -126,8 +126,12 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 def signal_handler(signum, frame):
     print("Shutting down streaming server...")
     if 'picam2' in globals():
-        picam2.stop_recording()
-        picam2.close()
+        try:
+            picam2.stop_recording()
+            picam2.stop()
+            picam2.close()
+        except:
+            pass
     sys.exit(0)
 
 def main():
@@ -144,20 +148,22 @@ def main():
         # Create camera instance
         picam2 = Picamera2()
         
-        # Configure camera
+        # Configure camera for streaming
         config = picam2.create_video_configuration(
-            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)}
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT), "format": "RGB888"}
         )
         picam2.configure(config)
         
-        # Start preview (required even though we're not using display)
-        picam2.start_preview(Preview.NULL)
+        # Start camera
+        picam2.start()
         
         # Create output stream
         output = StreamingOutput()
         
-        # Start recording to stream
-        picam2.start_recording(output, format='mjpeg')
+        # Start MJPEG encoder
+        from picamera2.encoders import MJPEGEncoder
+        encoder = MJPEGEncoder()
+        picam2.start_recording(encoder, output)
         
         # Start HTTP server
         address = ('', STREAMING_PORT)
@@ -178,8 +184,12 @@ def main():
         sys.exit(1)
     finally:
         if 'picam2' in globals():
-            picam2.stop_recording()
-            picam2.close()
+            try:
+                picam2.stop_recording()
+                picam2.stop()
+                picam2.close()
+            except:
+                pass
 
 if __name__ == '__main__':
     main()
