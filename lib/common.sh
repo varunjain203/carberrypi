@@ -22,6 +22,11 @@ done
 
 if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
+    
+    # Expand tilde in BASE_DIR if present
+    if [[ "$BASE_DIR" =~ ^~/ ]]; then
+        BASE_DIR="${HOME}/${BASE_DIR#~/}"
+    fi
 else
     echo "Error: Configuration file not found in any of these locations:" >&2
     for location in "${CONFIG_LOCATIONS[@]}"; do
