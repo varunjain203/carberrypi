@@ -146,8 +146,7 @@ def main():
         
         # Configure camera
         config = picam2.create_video_configuration(
-            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)},
-            transform={"hflip": False, "vflip": False}
+            main={"size": (CAMERA_WIDTH, CAMERA_HEIGHT)}
         )
         picam2.configure(config)
         
