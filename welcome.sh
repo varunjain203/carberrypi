@@ -10,9 +10,20 @@ cd "$SCRIPT_DIR"
 # Source common functions
 source "$SCRIPT_DIR/lib/common.sh"
 
-# Service scripts
+# Service scripts (use absolute paths to avoid confusion)
 RECORD_SCRIPT="$SCRIPT_DIR/bin/record.sh"
 STREAM_SCRIPT="$SCRIPT_DIR/bin/stream.sh"
+
+# Debug: verify paths exist
+if [[ ! -f "$RECORD_SCRIPT" ]]; then
+    echo "Error: Record script not found at $RECORD_SCRIPT" >&2
+    exit 1
+fi
+
+if [[ ! -f "$STREAM_SCRIPT" ]]; then
+    echo "Error: Stream script not found at $STREAM_SCRIPT" >&2
+    exit 1
+fi
 
 # Initialize system
 init_system
